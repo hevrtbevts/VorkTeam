@@ -1,0 +1,54 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Fungsi helper
+    function isAuth() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Aturan untuk koleksi 'users'
+    match /users/{userId} {
+      allow read, update: if isAuth() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuth(); // Allow user creation on first login
+      allow delete: if isAdmin();
+    }
+    
+    // Aturan untuk koleksi 'fcmTokens'
+    match /fcmTokens/{token} {
+        allow read, write: if isAuth();
+    }
+
+    // Aturan untuk koleksi 'konsumen'
+    match /konsumen/{clientId} {
+      // Siapa pun yang login dapat membuat data, selama mereka menetapkan diri mereka sebagai pemilik (uid).
+      allow create: if isAuth() && request.resource.data.uid == request.auth.uid;
+      
+      // Izin BACA:
+      // - Pengguna dapat membaca daftar (list) HANYA JIKA mereka memfilter berdasarkan uid mereka sendiri.
+      // - Pengguna dapat membaca satu dokumen (get) jika uid cocok ATAU jika mereka adalah admin.
+      // - Admin dapat membaca daftar (list) apa pun.
+      allow list: if (isAuth() && request.query.where.uid == request.auth.uid) || isAdmin();
+      allow get: if (isAuth() && resource.data.uid == request.auth.uid) || isAdmin();
+      
+      // Izin TULIS (Update/Delete):
+      // - Pengguna dapat memperbarui atau menghapus data mereka sendiri.
+      // - Admin dapat memperbarui atau menghapus data apa pun.
+      allow update, delete: if (isAuth() && resource.data.uid == request.auth.uid) || isAdmin();
+    }
+
+    // Aturan untuk koleksi 'settings' dan 'settings_bulan_ini' (Hanya Admin)
+    match /settings/{docId} {
+        allow read: if isAuth(); // Semua pengguna bisa baca setting
+        allow write: if isAdmin();
+    }
+    match /settings_bulan_ini/{docId} {
+        allow read: if isAuth(); // Semua pengguna bisa baca setting
+        allow write: if isAdmin();
+    }
+  }
+}

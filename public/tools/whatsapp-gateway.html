@@ -1,0 +1,105 @@
+
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>WhatsApp Gateway</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; padding: 16px; }
+    .card { max-width: 680px; margin: 0 auto; padding: 16px; border: 1px solid #eee; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+    .row { display: grid; gap: 8px; margin-bottom: 12px; }
+    input, textarea, button { padding: 10px; border-radius: 10px; border: 1px solid #ddd; width: 100%; box-sizing: border-box; }
+    button { cursor: pointer; font-weight: 600; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 900px){ .grid { grid-template-columns: 1fr 1fr; } }
+    .log { background: #f7f7f7; padding: 10px; border-radius: 10px; min-height: 80px; white-space: pre-wrap; font-family: monospace; font-size: 12px; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li { padding: 10px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 8px; }
+    .muted { color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>📲 WhatsApp Gateway</h2>
+    <div class="row">
+      <label>Nomor WA (format 628…)</label>
+      <input id="phone" placeholder="628xxxxxx" />
+    </div>
+    <div class="row">
+      <label>Pesan</label>
+      <textarea id="message" rows="4" placeholder="Tulis pesan…"></textarea>
+    </div>
+    <div class="row">
+      <button id="sendBtn">Kirim Pesan</button>
+    </div>
+    <div class="row">
+      <div class="log" id="log">Siap mengirim.</div>
+    </div>
+
+    <h3>📥 Pesan Masuk</h3>
+    <p class="muted">Realtime dari Firestore (koleksi: <code>wa_messages</code>).</p>
+    <div class="grid">
+      <div>
+        <ul id="inbox"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getFirestore, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}",
+      authDomain: "${process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}",
+      projectId: "${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}",
+      storageBucket: "${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}",
+      messagingSenderId: "${process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}",
+      appId: "${process.env.NEXT_PUBLIC_FIREBASE_APP_ID}"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    const phoneEl = document.getElementById('phone');
+    const msgEl   = document.getElementById('message');
+    const logEl   = document.getElementById('log');
+    const sendBtn = document.getElementById('sendBtn');
+    const inboxEl = document.getElementById('inbox');
+
+    sendBtn.addEventListener('click', async () => {
+      const phone = phoneEl.value.trim();
+      const message = msgEl.value.trim();
+      if (!phone || !message) { logEl.textContent = "Nomor & pesan wajib diisi."; return; }
+      logEl.textContent = "Mengirim…";
+
+      try {
+        const res = await fetch('/sendWA', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ phone, message })
+        });
+        const data = await res.json();
+        logEl.textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        logEl.textContent = "Error: " + e.message;
+      }
+    });
+
+    const qInbox = query(collection(db, 'wa_messages'), orderBy('timestamp', 'desc'), limit(50));
+    onSnapshot(qInbox, (snap) => {
+      inboxEl.innerHTML = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        const from = d.from || d.sender || d.remoteJid || '(unknown)';
+        const text = d.text || d.message || JSON.stringify(d);
+        const t    = d.timestamp ? new Date(d.timestamp).toLocaleString('id-ID') : '';
+        const li = document.createElement('li');
+        li.innerHTML = `<div><b>${from}</b></div><div>${text}</div><div class="muted">${t}</div>`;
+        inboxEl.appendChild(li);
+      });
+    });
+  </script>
+</body>
+</html>

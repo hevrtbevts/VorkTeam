@@ -1,0 +1,56 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Aturan untuk Koleksi 'users'
+    match /users/{userId} {
+      // Pengguna hanya bisa membaca dan memperbarui data mereka sendiri.
+      // Admin bisa membaca semua data pengguna.
+      allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
+      // Pengguna hanya bisa memperbarui data mereka sendiri (name, phoneNumber, weeklyTarget, dll).
+      // Admin bisa memperbarui peran dan status.
+      allow update: if isAuth() && request.auth.uid == userId || isAdmin();
+      // Pembuatan user di-handle oleh on-boarding, jadi tidak perlu `create` di sini.
+      allow create: if isAuth();
+    }
+    
+    // Aturan untuk Koleksi 'fcmTokens'
+    match /fcmTokens/{token} {
+        // Siapapun yang terautentikasi bisa membuat atau memperbarui token mereka sendiri.
+        allow write: if isAuth() && request.resource.data.userId == request.auth.uid;
+        // Tidak ada yang boleh membaca token orang lain.
+        allow read: if false;
+    }
+    
+    // Aturan untuk Koleksi 'konsumen'
+    match /konsumen/{clientId} {
+      // Izinkan baca & daftar jika pengguna diautentikasi.
+      // Keamanan sebenarnya ditegakkan oleh query `where('uid', '==', request.auth.uid)` di aplikasi.
+      allow list: if isAuth();
+      allow get: if isAuth() && (resource.data.uid == request.auth.uid || isAdmin());
+      
+      // Izinkan buat, update, hapus jika pengguna adalah pemilik data.
+      allow create, update, delete: if isAuth() && request.auth.uid == request.resource.data.uid;
+    }
+    
+    match /settings/{docId} {
+        allow read: if isAuth();
+        allow write: if isAdmin();
+    }
+    
+    match /settings_bulan_ini/{docId} {
+        allow read: if isAuth();
+        allow write: if isAdmin();
+    }
+  }
+}

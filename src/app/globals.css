@@ -1,0 +1,139 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  .card {
+    @apply bg-card rounded-2xl shadow-card;
+  }
+
+  .highlight {
+    @apply text-accent-yellow font-semibold;
+  }
+
+  .label {
+    @apply text-sm text-gray-600;
+  }
+
+  html {
+    @apply text-[13px] sm:text-[14px] md:text-base; /* Responsive font size */
+  }
+
+  :root {
+    --background: 0 0% 96%; /* Light Grey #F5F5F5 */
+    --foreground: 0 0% 15%; /* Dark Grey #262626 */
+
+    --card: 0 0% 100%; /* Pure White */
+    --card-foreground: 0 0% 15%;
+    
+    --card-dark: 0 0% 4%;
+    --card-foreground-dark: 0 0% 95%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
+
+    --primary: 75 100% 50%; /* Lime Green #D4FF00 */
+    --primary-foreground: 0 0% 10%;
+
+    --secondary: 0 0% 92%; /* Soft Grey */
+    --secondary-foreground: 0 0% 20%;
+
+    --muted: 0 0% 85%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 75 100% 50%; /* Lime Green Accent */
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 70% 50%; /* Red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 75 100% 50%;
+    --radius: 1rem;
+
+    /* Chart Colors */
+    --color-total-omset: 75 100% 50%;
+    --color-total-konsumen: 217 65% 55%;
+}
+
+.dark {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 95%; /* Near White */
+
+    --card: 0 0% 8%; /* Dark Grey #141414 */
+    --card-foreground: 0 0% 95%;
+    
+    --card-dark: 0 0% 4%;
+    --card-foreground-dark: 0 0% 95%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 75 100% 50%; /* Lime Green */
+    --primary-foreground: 0 0% 10%;
+
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 75 100% 50%;
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 75 100% 50%;
+
+    /* Chart Colors */
+    --color-total-omset: 75 100% 50%;
+    --color-total-konsumen: 217 65% 60%;
+}
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}
+
+@layer utilities {
+    @keyframes shimmer {
+        from {
+            background-position: 200% 0;
+        }
+        to {
+            background-position: -200% 0;
+        }
+    }
+    .animate-shimmer {
+        animation: shimmer 2s linear infinite;
+    }
+    .animated-gradient-background {
+        background: linear-gradient(-45deg, hsl(var(--primary)), hsl(var(--accent)), #23a6d5, #23d5ab);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease infinite;
+    }
+
+    @keyframes gradientShift {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+}
